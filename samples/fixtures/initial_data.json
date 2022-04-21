@@ -1,0 +1,26 @@
+[
+  {
+	"model": "samples.sample",
+	"pk": "14b25a7e-baba-4b1b-94f3-501e38a02e61",
+	"fields": {
+	  "grant": "044f00a8-d337-45c3-b90e-a602016b59c6",
+	  "user": "4386280d-00d4-4677-a2c5-a68c66ec6825",
+	  "name": "Vzorka #323",
+	  "note": "",
+	  "amount": 15.0,
+	  "created_at": "2022-04-13T00:39:40.341Z"
+	}
+  },
+  {
+	"model": "samples.sample",
+	"pk": "177c7a47-bed6-4d6b-9dc4-e773fa358097",
+	"fields": {
+	  "grant": "044f00a8-d337-45c3-b90e-a602016b59c6",
+	  "user": "d845c72a-2108-4b76-9dc0-2c3f936873ad",
+	  "name": "Čierna skúmavka",
+	  "note": "Neviem čo to je, a ani sa mi to nepáči",
+	  "amount": 10.0,
+	  "created_at": "2022-04-13T00:41:12.632Z"
+	}
+  }
+]
