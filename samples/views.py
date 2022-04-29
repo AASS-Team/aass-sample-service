@@ -1,84 +1,82 @@
-from rest_framework import status
-from rest_framework.exceptions import NotFound
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from django.views.decorators.csrf import csrf_exempt
+from django.db.utils import IntegrityError
+from spyne.error import ResourceNotFoundError, ResourceAlreadyExistsError
+from spyne.server.django import DjangoApplication
+from spyne.model.primitive import Uuid, String
+from spyne.service import Service
+from spyne.protocol.soap import Soap11
+from spyne.application import Application
+from spyne.decorator import rpc
+from spyne.util.django import DjangoComplexModel
 
-from . import serializers
-from samples.models import Sample
+from samples import models
 
-
-class SamplesList(APIView):
-    """
-    List all samples, or create a new sample.
-    """
-
-    serializer_class = serializers.SampleSerializer
-
-    def get(self, request, format=None):
-        samples = Sample.objects.all()
-        serializer = self.serializer_class(samples, many=True)
-
-        return Response(data=serializer.data)
-
-    def post(self, request, format=None):
-        serializer = self.serializer_class(data=request.data)
-
-        if not serializer.is_valid():
-            return Response(
-                data={
-                    "errors": serializer.errors,
-                    "message": "Nepodarilo sa uložiť vzorku",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        serializer.save(available=True)
-        return Response(
-            data={
-                "message": "Vzorka uložená",
-            },
-            status=status.HTTP_201_CREATED,
-        )
+NS = "aass_samples"
 
 
-class SampleDetail(APIView):
-    """
-    Retrieve, update or delete a sample instance.
-    """
+class Sample(DjangoComplexModel):
+    class Attributes(DjangoComplexModel.Attributes):
+        django_model = models.Sample
 
+
+class SampleService(Service):
     def get_object(self, id):
         try:
             return Sample.objects.get(pk=id)
         except Sample.DoesNotExist:
-            raise NotFound()
+            raise ResourceNotFoundError("Sample")
 
-    def get(self, request, id, format=None):
-        sample = self.get_object(id)
-        serializer = serializers.SampleSerializer(sample)
-        return Response(serializer.data)
+    @rpc(_returns=Sample)
+    def list(self):
+        """
+        List all samples
+        """
+        return Sample.objects.all()
 
-    def put(self, request, id, format=None):
-        sample = self.get_object(id)
-        serializer = serializers.SampleSerializer(sample, data=request.data)
+    @rpc(Uuid, _returns=Sample)
+    def get(self, id):
+        """
+        Retrieve sample instance
+        """
+        return self.get_object(id)
 
-        if not serializer.is_valid():
-            return Response(
-                data={
-                    "message": "Nepodarilo sa uložiť vzorku",
-                    "errors": serializer.errors,
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+    @rpc(Sample, _returns=None)
+    def create(self, sample):
+        """
+        Create new sample
+        """
+        try:
+            Sample.objects.create(**sample.as_dict())
+        except IntegrityError:
+            raise ResourceAlreadyExistsError("Container")
+        return
+        # return Response(message="Vzorka vytvorená")
 
-        serializer.save()
-        return Response(data={"message": "Vzorka uložená"})
+    @rpc(Uuid, Sample, _returns=None)
+    def update(self, id, sample):
+        """
+        Update existing sample
+        """
+        self.get_object(id).update(sample)
+        return
+        # return Response(message="Vzorka uložená")
 
-    def delete(self, request, id, format=None):
+    @rpc(Uuid, _returns=None)
+    def delete(self, id):
+        """
+        Delete sample
+        """
         sample = self.get_object(id)
         sample.delete()
+        return
+        # return Response(message="Vzorka vymazaná")
 
-        return Response(
-            data={
-                "message": "Vzorka vymazaná",
-            },
-        )
+
+SampleApp = Application(
+    services=[SampleService],
+    tns=NS,
+    in_protocol=Soap11(validator="lxml"),
+    out_protocol=Soap11(),
+)
+
+sample_service = csrf_exempt(DjangoApplication(SampleApp))

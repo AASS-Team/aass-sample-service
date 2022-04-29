@@ -19,6 +19,8 @@ django-environ = "*"
 black = "*"
 django-extensions = "*"
 djangorestframework = "*"
+spyne = "*"
+lxml = "*"
 
 [dev-packages]
 
