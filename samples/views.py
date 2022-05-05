@@ -27,16 +27,13 @@ class SamplesList(APIView):
             return Response(
                 data={
                     "errors": serializer.errors,
-                    "message": "Nepodarilo sa uložiť vzorku",
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         serializer.save(available=True)
         return Response(
-            data={
-                "message": "Vzorka uložená",
-            },
+            data=serializer.data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -55,7 +52,7 @@ class SampleDetail(APIView):
     def get(self, request, id, format=None):
         sample = self.get_object(id)
         serializer = serializers.SampleSerializer(sample)
-        return Response(serializer.data)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, id, format=None):
         sample = self.get_object(id)
@@ -64,21 +61,24 @@ class SampleDetail(APIView):
         if not serializer.is_valid():
             return Response(
                 data={
-                    "message": "Nepodarilo sa uložiť vzorku",
                     "errors": serializer.errors,
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         serializer.save()
-        return Response(data={"message": "Vzorka uložená"})
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, id, format=None):
         sample = self.get_object(id)
-        sample.delete()
+        deleted_rows = sample.delete()
 
-        return Response(
-            data={
-                "message": "Vzorka vymazaná",
-            },
-        )
+        if len(deleted_rows) <= 0:
+            return Response(
+                data={
+                    "errors": {"global": "Nepodarilo sa vymazať vzorku"},
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
