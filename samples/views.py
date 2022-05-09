@@ -31,7 +31,7 @@ class SamplesList(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer.save(available=True)
+        serializer.save()
         return Response(
             data=serializer.data,
             status=status.HTTP_201_CREATED,

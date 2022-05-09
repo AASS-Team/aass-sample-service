@@ -13,5 +13,4 @@ class SampleSerializer(serializers.ModelSerializer):
         model = Sample
         fields = "__all__"
 
-    available = serializers.ReadOnlyField()
     created_at = TimestampField(required=False)
