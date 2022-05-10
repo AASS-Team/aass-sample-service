@@ -82,3 +82,22 @@ class SampleDetail(APIView):
             )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class BulkSamplesList(APIView):
+    """
+    Bulk list sample
+    """
+
+    serializer_class = serializers.SampleSerializer
+
+    def post(self, request, format=None):
+        if not isinstance(request.data, list):
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        samples = Sample.objects.filter(id__in=request.data)
+        serializer = self.serializer_class(samples, many=True)
+
+        return Response(data=serializer.data)
